@@ -1,4 +1,14 @@
 defmodule Barna do
+  @moduledoc """
+  This module contains all of the macro magic that ultimately generates the additional functions
+  in the schemas that `use` it.
+
+  Functions that are added to schemas:
+  - fetch/1
+  """
+
+  import Ecto.Query
+
   defmacro __using__(_) do
     quote do
       use Ecto.Schema
@@ -10,74 +20,80 @@ defmodule Barna do
   end
 
   defmacro __before_compile__(env) do
-    properties = env.module
-    |> Module.get_attribute(:ecto_fields)
-    |> Enum.map(fn {key, _} -> key end)
+    properties =
+      env.module
+      |> Module.get_attribute(:ecto_fields)
+      |> Enum.map(fn {key, _} -> key end)
 
-    fallback_case_error = quote do: ({key, val}, _dynamic -> raise "Trying to match on property '#{key}' with val '#{val}' on '#{__MODULE__}' but the property doesn't exist")
-    fallback_case_ignore = quote do: ({key, val}, dynamic -> dynamic)
-
-    where_quote = Enum.flat_map(properties, fn property ->
+    fallback_case =
       quote do
-        {unquote(property), value}, dynamic -> dynamic([schema], ^dynamic and unquote({{:., [], [{:schema, [], Elixir}, property]}, [no_parens: true], []}) == ^value)
+        {key, val}, _dynamic ->
+          raise "Trying to match on property '#{key}' with val '#{val}' on '#{__MODULE__}' but the property doesn't exist"
       end
-    end)
-    where_quote_error = where_quote ++ fallback_case_error
-    where_quote_ignore = where_quote ++ fallback_case_ignore
 
-    reducer = {:fn, [], quote do: unquote(where_quote_ignore)}
-    reducer! = {:fn, [], quote do: unquote(where_quote_error)}
+    where_cases =
+      Enum.flat_map(properties, fn property ->
+        quote do
+          {unquote(property), value}, dynamic ->
+            dynamic(
+              [schema],
+              ^dynamic and
+                unquote({{:., [], [{:schema, [], Elixir}, property]}, [no_parens: true], []}) ==
+                  ^value
+            )
+        end
+      end) ++ fallback_case
+
+    reducer = {:fn, [], quote(do: unquote(where_cases))}
 
     quote do
-      def apply_filters(filters) do
-        Enum.reduce(filters, dynamic(true), unquote(reducer))
-      end
-
-      def apply_filters!(filters) do
-        Enum.reduce(filters, dynamic(true), unquote(reducer!))
-      end
-
+      @type fetch_opt ::
+              {:by, term} | {:include, [atom]} | {:include!, [atom]} | {:result_as_tuple, boolean}
+      @spec fetch([fetch_opt]) :: struct | nil | {:ok, struct} | {:error, :not_found}
       def fetch(opts) do
-        by = opts[:by] || raise "Missing opt 'by'"
-        include = opts[:include] # left join
-        include! = opts[:include!] # inner join
+        #######################
+        #   Prepare the opts  #
+        #######################
+        by = Barna.Options.parse_opt_required!(opts, :by) |> Barna.Options.opt_to_list(:id)
+        result_as_tuple = Barna.Options.parse_boolean_opt(opts, :result_as_tuple, true)
 
-        by = case by do
-          by when is_atom(by) -> [id: by]
-          by when is_binary(by) -> [id: by]
-          by when is_list(by) -> by
-        end
+        include = opts[:include]
+        include! = opts[:include!]
 
-        where_params = __MODULE__.apply_filters!(by)
-        query = __MODULE__ |> where(^where_params)
+        ############################
+        #   Generate the queries   #
+        ############################
+        where_params = Enum.reduce(by, dynamic(true), unquote(reducer))
 
-        query = if !is_nil(include) && include != [] do
-          Enum.reduce(include, query, fn incl, q ->
-            from schema in q,
-            left_join: joined in assoc(schema, ^incl),
-            preload: [{^incl, joined}]
-          end)
+        query =
+          __MODULE__
+          |> where(^where_params)
+          |> Barna.Query.parse_include(include)
+          |> Barna.Query.parse_include!(include!)
+
+        ####################################
+        #   Fetch and return the results   #
+        ####################################
+        if result_as_tuple do
+          Barna.fetch_as_tuple(query)
         else
-          query
-        end
-
-        query = if !is_nil(include!) && include! != [] do
-          Enum.reduce(include!, query, fn incl, q ->
-            from schema in q,
-            inner_join: joined in assoc(schema, ^incl),
-            preload: [{^incl, joined}]
-          end)
-        else
-          query
-        end
-
-        repo_module = Application.get_env(:barna, Barna)[:repo]
-
-        case repo_module.one(query) do
-          nil -> {:error, :not_found}
-          result -> {:ok, result}
+          Barna.fetch(query)
         end
       end
+    end
+  end
+
+  @spec fetch(Ecto.Queryable.t()) :: nil | struct
+  def fetch(query) do
+    repo_module = Application.get_env(:barna, Barna)[:repo]
+    repo_module.one(query)
+  end
+
+  @spec fetch_as_tuple(Ecto.Queryable.t()) :: {:ok, struct} | {:error, :not_found}
+  def fetch_as_tuple(query) do
+    case fetch(query) do
+      nil -> {:error, :not_found}
+      result -> {:ok, result}
     end
   end
 end
