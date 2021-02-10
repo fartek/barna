@@ -2,6 +2,18 @@
 
 Extends your Ecto schemas with convenience functions so that you can focus on your domain logic instead of plumbing.
 
+## Installation
+
+The package can be installed by adding `barna` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:barna, "~> 0.1.1"}
+  ]
+end
+```
+
 ## Adds the following functions
 ### fetch/1
 Allows you to get one or zero entries from your database. It supports fetching by one or more schema attributes and efficiently joining and preloading (non-nested) associations.
@@ -61,20 +73,3 @@ These are relatively small and simple functions but you still have to test them.
 
 **If your functions need to do something more than a basic select query you should still write a custom function in your context module and use that.**
 
-
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `barna` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:barna, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/barna](https://hexdocs.pm/barna).

@@ -4,11 +4,24 @@ defmodule Barna.MixProject do
   def project do
     [
       app: :barna,
-      version: "0.1.0",
+      description: description(),
+      package: package(),
+      version: "0.1.1",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env())
+    ]
+  end
+
+  defp description() do
+    "Extends your Ecto schemas with convenience functions so that you can focus on your domain logic instead of plumbing."
+  end
+
+  defp package() do
+    [
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/fartek/barna"}
     ]
   end
 
@@ -26,7 +39,8 @@ defmodule Barna.MixProject do
   defp deps do
     [
       {:ecto_sql, "~> 3.0"},
-      {:postgrex, ">= 0.0.0"}
+      {:postgrex, ">= 0.0.0", only: :test},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 end
