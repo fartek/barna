@@ -29,8 +29,8 @@ defmodule Barna.Options do
   def opt_to_list(%{} = opt, _default_opt_name), do: Map.to_list(opt)
   def opt_to_list(opt, default_opt_name), do: [{default_opt_name, opt}]
 
-  @spec parse_boolean_opt(list | map, term, term) :: term
-  def parse_boolean_opt(opts, opt_name, default_value) when is_list(opts) do
+  @spec parse_with_default(list | map, term, term) :: term
+  def parse_with_default(opts, opt_name, default_value) when is_list(opts) do
     if Keyword.has_key?(opts, opt_name) do
       opts[opt_name]
     else
@@ -38,7 +38,7 @@ defmodule Barna.Options do
     end
   end
 
-  def parse_boolean_opt(%{} = opts, opt_name, default_value) do
+  def parse_with_default(%{} = opts, opt_name, default_value) do
     if Map.has_key?(opts, opt_name) do
       opts[opt_name]
     else

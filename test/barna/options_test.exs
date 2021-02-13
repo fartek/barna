@@ -47,29 +47,29 @@ defmodule Barna.OptionsTest do
     end
   end
 
-  describe "parse_boolean_opt/3" do
+  describe "parse_with_default/3" do
     test "gets the opt value if the key exists in the opts list and the value is true" do
-      assert Options.parse_boolean_opt([a: true, b: false], :a, :foo)
+      assert Options.parse_with_default([a: true, b: false], :a, :foo)
     end
 
     test "gets the opt value if the key exists in the opts list and the value is false" do
-      refute Options.parse_boolean_opt([a: false, b: true], :a, :foo)
+      refute Options.parse_with_default([a: false, b: true], :a, :foo)
     end
 
     test "gets the opt value if the key exists in the opts map and the value is true" do
-      assert Options.parse_boolean_opt(%{a: true, b: false}, :a, :foo)
+      assert Options.parse_with_default(%{a: true, b: false}, :a, :foo)
     end
 
     test "gets the opt value if the key exists in the opts map and the value is false" do
-      refute Options.parse_boolean_opt(%{a: false, b: true}, :a, :foo)
+      refute Options.parse_with_default(%{a: false, b: true}, :a, :foo)
     end
 
     test "gets the default value if the key doesn't exist in the opts list" do
-      assert Options.parse_boolean_opt([a: true, b: false], :c, :foo) == :foo
+      assert Options.parse_with_default([a: true, b: false], :c, :foo) == :foo
     end
 
     test "gets the default value if the key doesn't exist in the opts map" do
-      assert Options.parse_boolean_opt(%{a: true, b: false}, :c, :foo) == :foo
+      assert Options.parse_with_default(%{a: true, b: false}, :c, :foo) == :foo
     end
   end
 
