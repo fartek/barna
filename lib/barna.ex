@@ -5,6 +5,7 @@ defmodule Barna do
 
   Functions that are added to schemas:
   - fetch/1
+  - list/1
   """
 
   import Ecto.Query
@@ -49,13 +50,13 @@ defmodule Barna do
     quote do
       @type fetch_opt ::
               {:by, term} | {:include, [atom]} | {:include!, [atom]} | {:result_as_tuple, boolean}
-      @spec fetch([fetch_opt]) :: struct | nil | {:ok, struct} | {:error, :not_found}
+      @spec fetch([fetch_opt]) :: __MODULE__ | nil | {:ok, __MODULE__} | {:error, :not_found}
       def fetch(opts) do
         #######################
         #   Prepare the opts  #
         #######################
         by = Barna.Options.parse_opt_required!(opts, :by) |> Barna.Options.opt_to_list(:id)
-        result_as_tuple = Barna.Options.parse_boolean_opt(opts, :result_as_tuple, true)
+        result_as_tuple = Barna.Options.parse_with_default(opts, :result_as_tuple, true)
 
         include = opts[:include]
         include! = opts[:include!]
@@ -80,6 +81,39 @@ defmodule Barna do
           Barna.fetch(query)
         end
       end
+
+      @type list_opt :: {:by, term} | {:include, [atom]} | {:include!, [atom]}
+      @spec list([list_opt]) :: [__MODULE__]
+      def list(opts \\ []) do
+        #######################
+        #   Prepare the opts  #
+        #######################
+
+        by = Barna.Options.parse_with_default(opts, :by, nil)
+        by = if by, do: Barna.Options.opt_to_list(by, :id), else: nil
+        order_by = opts[:order_by] || :inserted_at
+        order_by = Barna.Options.opt_to_list(order_by, :asc)
+
+        include = opts[:include]
+        include! = opts[:include!]
+
+        ############################
+        #   Generate the queries   #
+        ############################
+        where_params = if by, do: Enum.reduce(by, dynamic(true), unquote(reducer)), else: true
+
+        query =
+          __MODULE__
+          |> where(^where_params)
+          |> order_by(^order_by)
+          |> Barna.Query.parse_include(include)
+          |> Barna.Query.parse_include!(include!)
+
+        ####################################
+        #   Fetch and return the results   #
+        ####################################
+        Barna.list(query)
+      end
     end
   end
 
@@ -95,5 +129,11 @@ defmodule Barna do
       nil -> {:error, :not_found}
       result -> {:ok, result}
     end
+  end
+
+  @spec list(Ecto.Queryable.t()) :: [struct]
+  def list(query) do
+    repo_module = Application.get_env(:barna, Barna)[:repo]
+    repo_module.all(query)
   end
 end
