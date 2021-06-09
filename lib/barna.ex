@@ -50,7 +50,7 @@ defmodule Barna do
     quote do
       @type fetch_opt ::
               {:by, term} | {:include, [atom]} | {:include!, [atom]} | {:result_as_tuple, boolean}
-      @spec fetch([fetch_opt]) :: __MODULE__ | nil | {:ok, __MODULE__} | {:error, :not_found}
+      @spec fetch([fetch_opt]) :: struct | nil | {:ok, struct} | {:error, :not_found}
       def fetch(opts) do
         #######################
         #   Prepare the opts  #
@@ -83,7 +83,7 @@ defmodule Barna do
       end
 
       @type list_opt :: {:by, term} | {:include, [atom]} | {:include!, [atom]}
-      @spec list([list_opt]) :: [__MODULE__]
+      @spec list([list_opt]) :: [struct]
       def list(opts \\ []) do
         #######################
         #   Prepare the opts  #
