@@ -7,7 +7,7 @@ defmodule Barna.MixProject do
       description: description(),
       package: package(),
       version: "0.2.1",
-      elixir: "~> 1.11",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env())
