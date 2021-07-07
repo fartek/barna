@@ -72,16 +72,43 @@ defmodule Barna.QueryTest do
     end
   end
 
-  defp queries_equal?(query_1, query_2) do
-    sanitize_query_for_comparison(query_1) == sanitize_query_for_comparison(query_2)
+  describe "parse_limit/2" do
+    test "returns the original query if no limit specified" do
+      assert Query.parse_limit(User, nil) == User
+    end
+
+    test "adds the limit to the query if it is specified" do
+      expected_query_1 = from(u in User, limit: ^0)
+      query_1 = Query.parse_limit(User, 0)
+
+      expected_query_2 = from(u in User, limit: ^1451)
+      query_2 = Query.parse_limit(User, 1451)
+
+      expected_query_3 = from(u in User, limit: ^"string")
+      query_3 = Query.parse_limit(User, "string")
+
+      assert queries_equal?(query_1, expected_query_1)
+      assert queries_equal?(query_2, expected_query_2)
+      assert queries_equal?(query_3, expected_query_3)
+    end
   end
 
-  defp sanitize_query_for_comparison(query) do
+  defp queries_equal?(query_1, query_2) do
+    result_1 = sanitize_query_for_comparison(query_1)
+    result_2 = sanitize_query_for_comparison(query_2)
+    result_1 == result_2
+  end
+
+  defp sanitize_query_for_comparison(query) when is_struct(query) do
     joins =
       Enum.map(query.joins, fn join ->
         %Ecto.Query.JoinExpr{join | file: nil, line: nil, on: nil}
       end)
 
-    %Ecto.Query{query | joins: joins}
+    limit = if query.limit, do: %Ecto.Query.QueryExpr{query.limit | file: nil, line: nil}
+    query = %Ecto.Query{query | joins: joins, limit: limit}
+    Map.from_struct(query)
   end
+
+  defp sanitize_query_for_comparison(query), do: query
 end

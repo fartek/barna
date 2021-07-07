@@ -87,6 +87,10 @@ MyApp.Accounts.User.list(order_by: [desc: :name, asc: :id])
 # Another order_by example
 MyApp.Accounts.User.list(order_by: :id) # orders by [asc: :id]
 # > [%User{id: 1, name: "Anthony"}, %User{id: 2, name: "Liam"}, %User{id: 3, name: "Liam"}, ...]
+
+# Supports limits
+MyApp.Accounts.User.list(limit: 0)
+# > []
 ```
 
 Note: the default **order_by** is `[asc: :inserted_at]` so it plays nicely with UUID-type IDs.

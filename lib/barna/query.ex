@@ -40,4 +40,8 @@ defmodule Barna.Query do
   end
 
   defp do_parse_include!(_, query, _), do: query
+
+  @spec parse_limit(Ecto.Queryable.t(), nil | non_neg_integer) :: Ecto.Queryable.t()
+  def parse_limit(query, nil), do: query
+  def parse_limit(query, limit_val), do: limit(query, ^limit_val)
 end

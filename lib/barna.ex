@@ -82,7 +82,13 @@ defmodule Barna do
         end
       end
 
-      @type list_opt :: {:by, term} | {:include, [atom]} | {:include!, [atom]}
+      @typep order_by_opt :: atom | {:asc, atom} | {:desc, atom}
+      @type list_opt ::
+              {:by, term}
+              | {:include, [atom]}
+              | {:include!, [atom]}
+              | {:order_by, order_by_opt}
+              | {:limit, non_neg_integer}
       @spec list([list_opt]) :: [struct]
       def list(opts \\ []) do
         #######################
@@ -91,11 +97,14 @@ defmodule Barna do
 
         by = Barna.Options.parse_with_default(opts, :by, nil)
         by = if by, do: Barna.Options.opt_to_list(by, :id), else: nil
+
         order_by = opts[:order_by] || :inserted_at
         order_by = Barna.Options.opt_to_list(order_by, :asc)
 
         include = opts[:include]
         include! = opts[:include!]
+
+        limit = opts[:limit]
 
         ############################
         #   Generate the queries   #
@@ -108,6 +117,7 @@ defmodule Barna do
           |> order_by(^order_by)
           |> Barna.Query.parse_include(include)
           |> Barna.Query.parse_include!(include!)
+          |> Barna.Query.parse_limit(limit)
 
         ####################################
         #   Fetch and return the results   #

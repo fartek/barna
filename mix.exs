@@ -6,7 +6,7 @@ defmodule Barna.MixProject do
       app: :barna,
       description: description(),
       package: package(),
-      version: "0.2.1",
+      version: "0.3",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),

@@ -202,4 +202,40 @@ defmodule Barna.Integration.ListTest do
       assert result_4.id == user_4.id
     end
   end
+
+  describe "the :limit option" do
+    test "is not turned on by default" do
+      user_1 = Factory.insert!(:user, name: "Alpha", inserted_at: ~N[2021-01-01 01:01:01])
+      user_2 = Factory.insert!(:user, name: "Beta", inserted_at: ~N[2021-01-01 02:02:02])
+
+      assert [result_1, result_2] = User.list()
+      assert result_1.id == user_1.id
+      assert result_2.id == user_2.id
+    end
+
+    test "limits the results to the number that is provided as the limit" do
+      user_1 = Factory.insert!(:user, name: "Alpha", inserted_at: ~N[2021-01-01 01:01:01])
+      _user_2 = Factory.insert!(:user, name: "Beta", inserted_at: ~N[2021-01-01 02:02:02])
+
+      assert [result_1] = User.list(limit: 1)
+      assert result_1.id == user_1.id
+      assert [] = User.list(limit: 0)
+    end
+
+    test "is applied as the LAST operation (other filters take priority)" do
+      _user_1 = Factory.insert!(:user, name: "Alpha", inserted_at: ~N[2021-01-01 01:01:01])
+      _user_2 = Factory.insert!(:user, name: "Beta", inserted_at: ~N[2021-01-01 02:02:02])
+      user_3 = Factory.insert!(:user, name: "Beta", inserted_at: ~N[2021-01-01 03:03:03])
+      _user_4 = Factory.insert!(:user, name: "Delta", inserted_at: ~N[2021-01-01 04:04:04])
+
+      assert [result_1] = User.list(by: [name: "Beta"], order_by: [desc: :inserted_at], limit: 1)
+      assert result_1.id == user_3.id
+    end
+
+    test "does not work with negative integers and non-integers" do
+      assert_raise Ecto.Query.CastError, fn ->
+        User.list(limit: :error)
+      end
+    end
+  end
 end
