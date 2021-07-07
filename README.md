@@ -9,7 +9,7 @@ The package can be installed by adding `barna` to your list of dependencies in `
 ```elixir
 def deps do
   [
-    {:barna, "~> 0.2"}
+    {:barna, "~> 0.3"}
   ]
 end
 ```
